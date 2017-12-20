@@ -9,6 +9,28 @@ $(document).ready(function(){
     $('.editable').keydown(function(){
         warn_on_leave = true;
     });
+
+    $('.editable').keyup(function(event) {
+        var keyCode = event.keyCode;
+        
+        if (keyCode == 8) {
+            var content = get_content($(this).attr('name'));
+            if (content.length <= 0) {
+                editor.setContent('<p class="medium-insert-active"><br></p>');
+            }
+        }
+    });
+
+    $('.editable').keypress(function(event) {
+        var keyCode = event.keyCode;
+        
+        if (keyCode == 8) {
+            var content = get_content($(this).attr('name'));
+            if (content.length <= 0) {
+                editor.setContent('<p class="medium-insert-active"><br></p>');
+            }
+        }
+    });
     
     // 投稿、保存ボタンは対象外
     $('input[type="submit"]').click(function(){

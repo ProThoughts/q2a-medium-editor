@@ -17,54 +17,44 @@
 		function filter_question(&$question, &$errors, $oldquestion)
 		{
 			if (qa_opt('editor_for_qs') === 'Medium Editor') {
-				$question['content'] = $this->remove_tags($question['content']);
+				$tmp = $this->remove_tags($question['content']);
+				$question['content'] = qme_unwrapping_images($tmp);
 			}
 		}
 
 		function filter_answer(&$answer, &$errors, $question, $oldanswer)
 		{
 			if (qa_opt('editor_for_as') === 'Medium Editor') {
-				$answer['content'] = $this->remove_tags($answer['content']);
+				$tmp = $this->remove_tags($answer['content']);
+				$answer['content'] = qme_unwrapping_images($tmp);
 			}
 		}
 
 		function filter_comment(&$comment, &$errors, $question, $parent, $oldcomment)
 		{
 			if (qa_opt('editor_for_cs') === 'Medium Editor') {
-				$comment['content'] = $this->remove_tags($comment['content']);
+				$tmp = $this->remove_tags($comment['content']);
+				$comment['content'] = qme_unwrapping_images($tmp);
 			}
 		}
 
+		/*
+		 * 不要なタグの削除
+		 */
 		private function remove_tags($content) {
 			// remove progressbar
-			$tmp = $this->remove_progressbar($content);
+			$tmp = qme_remove_progressbar($content);
+			// remove span style
+			$tmp = qme_remove_style('span', $tmp);
+			// remove img tag
+			$tmp = qme_remove_tag('img', $tmp);
+			// remove medium buttons
+			$tmp = qme_remove_tag('div.medium-insert-buttons', $tmp);
 			// remove br tags at the end of contents
-			$new_content = $this->remove_br_tags($tmp);
-
+			$new_content = qme_remove_br_tags($tmp);
 			return $new_content;
 		}
 
-		/*
-		 * プログレスバーが残っている場合に削除する
-		 */
-		private function remove_progressbar($content)
-		{
-			$regex = "/\<div\s?class=\"[^\"]*bar[^\"]*\"[^>]*><\/div>/Us";
-			$regex2 = "/\<div\s?class=\"mdl-progress\s?[^\"]*\"[^>]*><\/div>/Us";
-			$tmp = preg_replace($regex, "", $content);
-			return preg_replace($regex2, "", $tmp);
-		}
-
-		/*
-		 * 本文末尾の改行を削除
-		 */
-		private function remove_br_tags($content)
-		{
-			$regex = "/<p class=\"medium-insert-active\">(<br>)*<\/p>/Us";
-			$regex2 = "/(<p class=\"\">(<br>)*<\/p>)*$/Us";
-			$tmp = preg_replace($regex, "", $content);
-			return preg_replace($regex2, "", $tmp);
-		}
 
 	}
 

@@ -35,6 +35,10 @@ return array(
     'only_one_message' => '動画のアップロードは1つの投稿につき1動画のみです',
     'image_type_error' => 'サポートしていないフォーマットです: ',
     'image_size_error' => 'ファイルサイズが大きすぎます\\n ^ MB以下でお願いします: ',
+    'image_type_error_title' => '画像ファイルではありません',
+    'image_size_error_title' => 'ファイルサイズが大きすぎます',
+    'image_upload_error_title' => 'アップロード失敗',
+    'image_upload_error_message' => 'エラーが発生しました。時間を置いて再度お試しください。',
 );
 
 

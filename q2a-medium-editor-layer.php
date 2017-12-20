@@ -13,6 +13,11 @@ class qa_html_theme_layer extends qa_html_theme_base
 
     private function is_medium_editor_active()
     {
+        
+        if(method_exists('qa_html_theme_layer', 'mdl_is_android_app') &&  $this->mdl_is_android_app()) {
+          return false;
+        }
+
         if (qa_is_logged_in()) {
           if (($this->template === 'ask' && qa_opt('editor_for_qs') === self::EDITOR_NAME)
           || ($this->template === 'question' && qa_opt('editor_for_as') === self::EDITOR_NAME)
@@ -42,14 +47,22 @@ class qa_html_theme_layer extends qa_html_theme_base
             $this->output_css();
             $this->output_js();
         }
+        $allow_templates = array(
+            'ask',
+            'question',
+            'blog',
+            'blog-new',
+            'message'
+        );
+        if (in_array($this->template, $allow_templates)) {
+            $this->output('<link rel="stylesheet" type="text/css" href="'.QA_HTML_THEME_LAYER_URLTOROOT.'css/custom.css" />');
+        }
     }
 
     public function q_view_content($q_view)
     {
         if (isset($q_view['content'])) {
-            $tmp = $this->remove_progressbar($q_view['content']);
-            $tmp = $this->remove_overlay($tmp);
-            $q_view['content'] = $this->medium_editor_embed_replace($tmp);
+            $q_view['content'] = $this->filter_content($q_view['content']);
         }
         qa_html_theme_base::q_view_content($q_view);
     }
@@ -57,9 +70,7 @@ class qa_html_theme_layer extends qa_html_theme_base
     public function a_item_content($a_item)
     {
         if (isset($a_item['content'])) {
-            $tmp = $this->remove_progressbar($a_item['content']);
-            $tmp = $this->remove_overlay($tmp);
-            $a_item['content'] = $this->medium_editor_embed_replace($tmp);
+            $a_item['content'] = $this->filter_content($a_item['content']);
         }
         qa_html_theme_base::a_item_content($a_item);
     }
@@ -67,9 +78,7 @@ class qa_html_theme_layer extends qa_html_theme_base
     public function c_item_content($c_item)
     {
         if (isset($c_item['content'])) {
-            $tmp = $this->remove_progressbar($c_item['content']);
-            $tmp = $this->remove_overlay($tmp);
-            $c_item['content'] = $this->medium_editor_embed_replace($tmp);
+            $c_item['content'] = $this->filter_content($c_item['content']);
         }
         qa_html_theme_base::c_item_content($c_item);
     }
@@ -116,6 +125,15 @@ class qa_html_theme_layer extends qa_html_theme_base
         );
         $text = preg_replace('/' . $video[0] . '/i',$video[1],$text);
 
+        // 画像タグの変換
+        $text = qme_remove_images_class($text);
+        $imagetag = file_get_contents(MEDIUM_EDITOR_DIR . '/html/image-url.html');
+        $image = array(
+            "/\<div class=\"medium-insert-images\">(.*)\<div class=\"image-url\"\>\[image=\"?([^\"\]]+)\"?\]\<\/div\>(.*)<\/div\>/isU",
+        );
+        $text = qme_remove_anchor($text);
+        $text = preg_replace($image[0], $imagetag, $text);
+
         return $text;
     }
 
@@ -132,7 +150,6 @@ class qa_html_theme_layer extends qa_html_theme_base
         foreach ($css_files as $css) {
             $this->output('<link rel="stylesheet" type="text/css" href="'.$components.$css.'" />');
         }
-        $this->output('<link rel="stylesheet" type="text/css" href="'.QA_HTML_THEME_LAYER_URLTOROOT.'css/custom.css" />');
     }
 
     private function output_js()
@@ -173,18 +190,7 @@ class qa_html_theme_layer extends qa_html_theme_base
         );
         $this->output($imageErrorDialog.$videoDialog);
     }
-    
-    /*
-     * プログレスバーが残っている場合に削除する
-     */
-    private function remove_progressbar($content)
-    {
-        $regex = "/\<div\s?class=\"[^\"]*bar[^\"]*\"[^>]*><\/div>/Us";
-        $regex2 = "/\<div\s?class=\"mdl-progress\s?[^\"]*\"[^>]*><\/div>/Us";
-        $tmp = preg_replace($regex, "", $content);
-        return preg_replace($regex2, "", $tmp);
-    }
-    
+
 		/*
 		 * Overlayを消す
 		 */
@@ -193,7 +199,7 @@ class qa_html_theme_layer extends qa_html_theme_base
 			$overlay = '<div class="medium-insert-videos-overlay"></div>';
 			return str_replace($overlay, "", $content);
 		}
-    
+
     private function output_js_warn()
     {
       $warn_message = qa_lang_html('q2a_medium_editor_lang/warn_message');
@@ -207,7 +213,7 @@ class qa_html_theme_layer extends qa_html_theme_base
         $this->output('<script src="'.$script_mobile.'"></script>');
       }
     }
-    
+
     private function create_params()
     {
       return array(
@@ -230,6 +236,19 @@ class qa_html_theme_layer extends qa_html_theme_base
         '^disconnect_message' => qa_lang_html('q2a_medium_editor_lang/disconnect_message'),
         '^only_one_message' => qa_lang_html('q2a_medium_editor_lang/only_one_message'),
       );
+    }
+
+    /*
+     * 不要なタグの削除や
+     * 埋め込みタグの変換を行う
+     */
+    private function filter_content($content)
+    {
+        $tmp = qme_remove_progressbar($content);
+        $tmp = qme_remove_style('span', $tmp);
+        $tmp = qme_remove_br_tags_in_div($tmp);
+        $tmp = $this->remove_overlay($tmp);
+        return $this->medium_editor_embed_replace($tmp);
     }
 } // end qa_html_theme_layer
 
